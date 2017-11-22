@@ -50,11 +50,11 @@ declare global {
 
 const localeTime = "L LT";
 
-String.prototype.sanitize = function(this: string) {
+String.prototype.sanitize = function (this: string) {
   return this.replace(/\s/g, "-").replace(/[^a-z0-9\-]/gi, "");
 };
 
-String.prototype.htmlize = function(this: string) {
+String.prototype.htmlize = function (this: string) {
   return this.replace(/<\/*(step|param|desc|comp)(.*?)>/g, "")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
@@ -82,10 +82,9 @@ const printWorkItems = {
               return Q.all(pages);
             })
             .then(pages => {
-              pages.forEach(
-                page => (document.getElementById("workitems").innerHTML += page)
-              );
-
+              let page = pages.reduce((p, c) => p + c);
+              document.getElementById("workitems").innerHTML += page;
+              console.log(page);
               window.focus(); // needed for IE
               let ieprint = document.execCommand("print", false, null);
               if (!ieprint) {
@@ -109,9 +108,9 @@ const printQueryToolbar = {
         action: (actionContext: IActionContext) => {
           return client
             .queryByWiql(
-              { query: actionContext.query.wiql },
-              vssContext.project.name,
-              vssContext.team.name
+            { query: actionContext.query.wiql },
+            vssContext.project.name,
+            vssContext.team.name
             )
             .then(result => {
               if (result.workItemRelations) {
@@ -127,11 +126,8 @@ const printQueryToolbar = {
                   return Q.all(pages);
                 })
                 .then(pages => {
-                  pages.forEach(
-                    page =>
-                      (document.getElementById("workitems").innerHTML += page)
-                  );
-
+                  let page = pages.reduce((p, c) => p + c);
+                  document.getElementById("workitems").innerHTML += page;
                   window.focus(); // needed for IE
                   let ieprint = document.execCommand("print", false, null);
                   if (!ieprint) {
@@ -167,15 +163,15 @@ function getFields(workItem: Models.WorkItem) {
   return dataService.then((service: IExtensionDataService) => {
     return service
       .getValue(
-        `wiprint-${workItem.fields["System.WorkItemType"].sanitize()}`,
-        {
-          scopeType: "user",
-          defaultValue: dummy as Models.WorkItemTypeFieldInstance[]
-        }
+      `wiprint-${workItem.fields["System.WorkItemType"].sanitize()}`,
+      {
+        scopeType: "user",
+        defaultValue: dummy as Models.WorkItemTypeFieldInstance[]
+      }
       )
       .then(
-        (data: Models.WorkItemTypeFieldInstance[]) =>
-          data.length > 0 ? data : dummy
+      (data: Models.WorkItemTypeFieldInstance[]) =>
+        data.length > 0 ? data : dummy
       );
   });
 }
@@ -198,79 +194,64 @@ function getHistory(workItem: Models.WorkItem) {
 }
 
 function prepare(workItems: Models.WorkItem[]) {
-  return workItems.map(item => {
+  return workItems.map((item, index) => {
     return Q.all([getFields(item), getHistory(item), getWorkItemFields()])
       .then(results => {
         return results;
       })
       .spread(
-        (
-          fields: Models.WorkItemTypeFieldInstance[],
-          history: Models.WorkItemComment[],
-          allFields: Models.WorkItemField[]
-        ) => {
-          let insertText =
-            `<div class="item"><h2>${item.fields["System.WorkItemType"]} ` +
-            `${item.id} - ${item.fields["System.Title"]}</h2>`;
-          fields.forEach(field => {
-            const fieldRef = allFields.filter(
-              f => f.referenceName === field.referenceName
-            )[0];
-            if (item.fields[field.referenceName]) {
-              if (fieldRef.type) {
-                switch (fieldRef.type) {
-                  case Models.FieldType.DateTime:
-                    if (
-                      moment(item.fields[field.referenceName]).diff(
-                        moment(),
-                        "years"
-                      ) < 1000
-                    ) {
-                      insertText += `<p><b>${field.name}:</b> ${moment(
-                        item.fields[field.referenceName]
-                      ).format(localeTime)}</p>`;
-                    }
-                    break;
-                  case Models.FieldType.Html:
-                    insertText += `<p><b>${field.name}:</b> ${item.fields[
-                      field.referenceName
-                    ].htmlize()}</p>`;
-                    break;
-                  case Models.FieldType.History:
-                    if (history.length > 0) {
-                      insertText += `<p><b>${field.name}</b></p>`;
-                      history.forEach(comment => {
-                        insertText += `<div class="history"><b>${moment(
-                          comment.revisedDate
-                        ).format(
-                          localeTime
-                        )} ${comment.revisedBy.name.substring(
-                          0,
-                          comment.revisedBy.name.indexOf("<") - 1
-                        )}:</b><br> ${comment.text}</div>`;
-                      });
-                    }
-                    break;
-                  default:
-                    insertText += `<p><b>${field.name}:</b> ${item.fields[
-                      field.referenceName
-                    ]}</p>`;
-                    break;
-                }
-              } else {
-                insertText += `<p><b>${field.name}:</b> ${item.fields[
-                  field.referenceName
-                ]}</p>`;
-              }
-            }
-          });
-          insertText += "</div>";
-          return insertText;
+      (
+        fields: Models.WorkItemTypeFieldInstance[],
+        history: Models.WorkItemComment[],
+        allFields: Models.WorkItemField[]
+      ) => {
+        let insertText = "";
+
+        if (index % 6 === 0) {
+          insertText += `<div class="row mb-4 row-height">`;
         }
-      );
+        if (index % 6 === 3) {
+          insertText += `<div class="row row-height">`;
+        }
+        let desc = item.fields["System.Description"] || "";
+        insertText += `<div class="col-sm-4">
+                                <div class="border">
+                                    <div class="pl-3 pr-3 pt-3 clearfix">
+                                        <div class="float-left">
+                                            <div>
+                                                <strong>${item.fields["System.Id"] || ""}</strong>
+                                            </div>
+                                        </div>
+                                        <div class="float-right">
+                                            <div>
+                                                <em>${item.fields["System.IterationPath"] || ""}</em>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr />
+                                    <h5 class="pl-2 pr-2 text-center">${item.fields["System.Title"] || ""}</h4>
+                                    <div class="pl-2 pr-2 text-justify row-desc-height" style="font-size: 10px;">${desc}</div>
+                                    <hr />
+                                    <div class="pl-3 pr-3 pb-3 clearfix">
+                                        <div class="float-left">
+                                            <div> Point: ${item.fields["Microsoft.VSTS.Scheduling.Effort"] || ""} </div>
+                                        </div>
+                                        <div class="float-right">
+                                            <div> Priority: ${item.fields["Microsoft.VSTS.Common.Priority"] || ""} </div>
+                                        </div>
+                                    </div>
+                                </div>
+                              </div>`;
+        if (index % 6 === 2 || (index === workItems.length - 1 && index % 6 < 2)) {
+          insertText += `</div>`;
+        }
+        if (index % 6 === 5 || (index === workItems.length - 1 && index % 6 >= 3 && index % 6 < 5)) {
+          insertText += `</div><div class="page-break"></div>`;
+        }
+        return insertText;
+      });
   });
 }
-
 // VSTS/2017
 VSS.register(
   `${extensionContext.publisherId}.${extensionContext.extensionId}.print-work-item`,

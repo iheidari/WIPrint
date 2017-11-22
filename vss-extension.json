@@ -1,14 +1,14 @@
 {
   "manifestVersion": 1,
-  "id": "wiprint",
-  "version": "2.2.1",
-  "name": "Work Item Print",
+  "id": "IaTicket",
+  "version": "2.2.42",
+  "name": "IA ticket",
   "scopes": [
     "vso.work",
     "vso.extension.data_write"
   ],
-  "description": "Print work items from query toolbar or context menu.",
-  "publisher": "mrtarantula",
+  "description": "Creating ticket",
+  "publisher": "iheidari",
   "public": true,
   "icons": {
     "default": "static/img/logo.png"
@@ -20,7 +20,7 @@
     "Plan and track"
   ],
   "tags": [
-    "print",
+    "ticket",
     "work items"
   ],
   "content": {
@@ -30,18 +30,6 @@
     "license": {
       "path": "LICENSE"
     }
-  },
-  "links": {
-    "support": {
-      "uri": "https://github.com/mrtarantula/wiprint/issues"
-    },
-    "repository": {
-      "uri": "https://github.com/mrtarantula/wiprint"
-    }
-  },
-  "repository": {
-    "type": "git",
-    "uri": "https://github.com/mrtarantula/wiprint"
   },
   "branding": {
     "color": "rgb(255, 255, 255)",
